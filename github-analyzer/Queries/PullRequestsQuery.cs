@@ -1,4 +1,5 @@
 ﻿using GraphQL;
+using System;
 
 namespace github_analyzer
 {
@@ -14,7 +15,7 @@ namespace github_analyzer
             Before = before;
         }
 
-        public GraphQLRequest CreateRequest()
+        public GraphQLRequest GetAllUsersPullRequests()
         {
             return new GraphQLRequest
             {
@@ -45,6 +46,55 @@ query User($login: String!, $before: String) {
                 }
             };
 
+        }
+
+        public GraphQLRequest GetLast100PullRequestsFromRepositoryBefore(string owner, string repo, string before)
+        {
+            return new GraphQLRequest
+            {
+                Query = @"
+query($owner: String!, $repo: String!, $before: String) {
+    repository(owner: $owner, name: $repo) {
+        pullRequests(last: 100, before: $before) {
+            pageInfo {
+                startCursor
+                hasPreviousPage
+            }
+            nodes {
+                id
+                number
+                createdAt
+                title
+                author {
+                    ...on User {
+                        name
+                        id
+                        login
+                    }
+                }
+                repository {
+                    name
+                    nameWithOwner
+                }
+                headRefName
+                additions
+                deletions
+                commits {
+                        totalCount
+                }
+            }
+        }
+    }
+}
+",
+                Variables = new
+                {
+                    owner,
+                    repo,
+                    before
+                }
+
+            };
         }
     }
 }
